@@ -17,5 +17,6 @@ pub struct JobPost{
     pub desc : String,
     pub idx : u8,
     pub status : bool,
-    pub applicants : Vec<Pubkey>
+    pub applicants : Vec<Pubkey>,
+    pub authority : Pubkey,
 }

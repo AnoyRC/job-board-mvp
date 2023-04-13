@@ -29,6 +29,7 @@ pub mod job_board{
         job_post.desc = _desc;
         job_post.idx = user_profile.last_job;
         job_post.status = true;
+        job_post.authority = ctx.accounts.authority.key();
         user_profile.last_job = user_profile.last_job.checked_add(1).unwrap();
         user_profile.job_count = user_profile.job_count.checked_add(1).unwrap();
 
@@ -39,6 +40,15 @@ pub mod job_board{
         let job_post = &mut ctx.accounts.job_post;
         job_post.applicants.push(ctx.accounts.user_profile.key());
         
+        Ok(())
+    }
+
+    pub fn delete_job(ctx : Context<DeleteJob>) -> Result<()>{
+        let job_post = &mut ctx.accounts.job_post;
+        let user_profile = &mut ctx.accounts.user_profile;
+        job_post.status = false;
+        user_profile.job_count = user_profile.job_count.checked_sub(1).unwrap();
+
         Ok(())
     }
 }
@@ -95,10 +105,30 @@ pub struct Apply<'info>{
     pub user_profile : Box<Account<'info, User>>,
 
     #[account(mut)]
-    pub job_post:Box<Account<'info, JobPost>>,
+    pub job_post : Box<Account<'info, JobPost>>,
 
     pub system_program : Program<'info, System>
 }
 
+#[derive(Accounts)]
+#[instruction(job_idx : u8)]
+pub struct DeleteJob<'info>{
+    #[account(mut)]
+    pub authority : Signer<'info>,
 
+    #[account(mut,
+              seeds=[USER_TAG, authority.key().as_ref()],
+              bump,
+              has_one=authority)]
+    pub user_profile : Box<Account<'info,User>>,
+
+    #[account(mut,
+              close=authority,
+              seeds=[JOB_TAG, authority.key().as_ref(), &[job_idx].as_ref()],
+              bump,
+              has_one=authority)]
+    pub job_post : Box<Account<'info, JobPost>>,
+
+    pub system_program : Program<'info, System>,
+}
 
